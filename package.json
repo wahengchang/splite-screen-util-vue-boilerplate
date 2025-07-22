@@ -1,0 +1,29 @@
+{
+  "name": "vue-cdn-static-starter",
+  "version": "1.0.0",
+  "description": "Frontend-only static site with Vue.js 3 CDN and Component-Store-Observer architecture",
+  "scripts": {
+    "kill:port5050": "lsof -ti:5050 | xargs kill -9 2>/dev/null || true",
+    "dev": "npm run kill:port5050; npx serve --no-clipboard -l 5050 ./public",
+    "start": "npm run kill:port5050; npx serve --no-clipboard -l 5050 ./public",
+    "test": "echo 'Frontend testing to be configured'"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "keywords": [
+    "vue3",
+    "static",
+    "frontend",
+    "component-store-observer",
+    "reactive",
+    "cdn",
+    "spa"
+  ],
+  "author": "Development Team",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  }
+}
