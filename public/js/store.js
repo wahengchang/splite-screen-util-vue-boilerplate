@@ -226,6 +226,9 @@ window.AppStore = (function() {
     return storeAPI.init();
 })();
 
+// ES6 module export
+export const AppStore = window.AppStore;
+
 // Export for module environments
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = window.AppStore;

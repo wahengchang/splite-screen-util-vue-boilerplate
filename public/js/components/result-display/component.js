@@ -4,7 +4,7 @@
  * @component ResultDisplayComponent
  */
 
-const ResultDisplayComponent = {
+export const ResultDisplayComponent = {
   props: {
     inputText: {
       type: String,

@@ -4,6 +4,8 @@
  * @component ResultDisplayWrapper
  */
 
+import { ResultDisplayComponent } from './component.js';
+
 const ResultDisplayWrapper = {
   computed: {
     // === Store Integration ===

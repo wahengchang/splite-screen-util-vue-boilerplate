@@ -4,6 +4,8 @@
  * @component TextInputComponent
  */
 
+import { AppStore } from '../store.js';
+
 const TextInputComponent = {
   props: {
     currentTheme: {
@@ -118,7 +120,7 @@ const TextInputComponent = {
 
     // === Store Integration Methods ===
     getStore() {
-      return window.AppStore;
+      return AppStore;
     },
 
     updateStore(method, data) {
@@ -217,7 +219,7 @@ const LeftComponentWrapper = {
   computed: {
     // === Store Integration ===
     store() {
-      return window.AppStore;
+      return AppStore;
     },
     
     storeCurrentTheme() {
@@ -255,3 +257,5 @@ function mountTextInputComponent() {
 }
 
 document.addEventListener('DOMContentLoaded', mountTextInputComponent);
+
+export { TextInputComponent, LeftComponentWrapper };
