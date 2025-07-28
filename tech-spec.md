@@ -3,10 +3,11 @@
 ## Architecture Overview
 
 ### System Architecture
-- **Pattern**: Vue Component-Store-Observer Architecture
+- **Pattern**: Container/Presentational Components with Vue.js ES6 Modules
 - **Frontend**: Static HTML/CSS/JS + Vue.js 3 CDN components
 - **Backend**: None - Static file serving only
-- **Communication**: Vue reactive global store with computed properties
+- **Communication**: Vue reactive global store with ES6 imports
+- **Module System**: ES6 imports with `type="module"` scripts
 
 ## Core Objectives
 
@@ -38,8 +39,9 @@ Result Processing:
 ### Tech Stack
 - **Runtime Environment**: Static HTML + Tailwind CSS CDN + Vue.js 3 CDN
 - **State Management**: Vue reactive global store + LocalStorage
-- **Architecture Pattern**: Component-Store-Observer with Vue reactivity
-- **Development Server**: npx serve --no-clipboard -l 5050 ./public (already configured)
+- **Architecture Pattern**: Container/Presentational Components with ES6 modules
+- **Module System**: ES6 imports with browser native module support
+- **Development Server**: npx serve --no-clipboard -l 5050 ./public
 - **Build Process**: No build, direct static file serving
 
 ## Layout Design
@@ -168,7 +170,7 @@ Result Processing:
 
 ### State Management Pattern
 ```javascript
-// Global Vue Reactive Store
+// Global Vue Reactive Store with ES6 Export
 window.AppStore = (function() {
   const reactiveData = Vue.reactive({
     // Core input and processing state
@@ -210,85 +212,72 @@ window.AppStore = (function() {
     updateTheme(theme) { /* ... */ }
   };
 })();
+
+// ES6 module export for container components
+export const AppStore = window.AppStore;
 ```
 
-### Vue Component Pattern
+### Container/Presentational Pattern
 ```javascript
-// Pure Props-Based Component
-const ResultDisplayComponent = {
+// === Presentational Component (Pure UI) ===
+export const InputFieldComponent = {
   props: {
-    inputText: {
-      type: String,
-      default: ''
-    },
-    selectedFormat: {
-      type: String,
-      default: 'text',
-      validator: (value) => ['text', 'json', 'html'].includes(value)
-    }
+    value: { type: String, default: '' },
+    maxLength: { type: Number, default: 50000 },
+    isOverLimit: { type: Boolean, default: false }
   },
-  
-  computed: {
-    processedResult() {
-      if (!this.inputText.trim()) return '';
-      
-      switch (this.selectedFormat) {
-        case 'json':
-          try {
-            const parsed = JSON.parse(this.inputText);
-            return JSON.stringify(parsed, null, 2);
-          } catch (e) {
-            // Fallback to text analysis for invalid JSON
-            return this.analyzeText(this.inputText);
-          }
-        case 'html':
-          return this.formatHTML(this.inputText);
-        case 'text':
-        default:
-          return this.analyzeText(this.inputText);
-      }
-    }
-  },
+  emits: ['input', 'focus'],
   
   methods: {
-    analyzeText(text) {
-      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-      const lines = text.split('\n');
-      return `Word Count: ${words.length}\nLine Count: ${lines.length}\nCharacter Count: ${text.length}`;
-    },
-    
-    formatHTML(html) {
-      return html.replace(/>\s+</g, '><').replace(/\s+/g, ' ').trim();
+    handleInput(event) {
+      this.$emit('input', event.target.value);
     }
   },
   
   template: `
-    <div class="result-display-container h-full flex flex-col p-4">
-      <div class="flex-1 relative">
-        <textarea
-          v-model="processedResult"
-          readonly
-          class="w-full h-full resize-none p-3 bg-gray-900 text-white border border-gray-600 rounded font-mono text-sm"
-        ></textarea>
-      </div>
-    </div>
+    <textarea
+      :value="value"
+      @input="handleInput"
+      :maxlength="maxLength"
+      class="w-full h-full resize-none p-3 border rounded"
+      :class="{ 'border-red-500': isOverLimit }"
+    ></textarea>
   `
 };
 
-// Store-to-Props Bridge
-const ResultDisplayWrapper = {
-  computed: {
-    store() { return window.AppStore; }
+// === Container Component (Business Logic) ===
+import { AppStore } from '../../store.js';
+import { InputFieldComponent } from './input-field.js';
+
+const LeftInputContainer = {
+  data() {
+    return {
+      inputText: '',
+      maxLength: 50000
+    };
   },
   
-  components: {
-    ResultDisplay: ResultDisplayComponent
+  computed: {
+    store() { return AppStore; },
+    characterCount() { return this.inputText.length; },
+    isOverLimit() { return this.characterCount > this.maxLength; }
   },
+  
+  methods: {
+    handleInput(newValue) {
+      this.inputText = newValue;
+      this.store.updateInputText(newValue);
+    }
+  },
+  
+  components: { InputField: InputFieldComponent },
   
   template: `
-    <ResultDisplay 
-      :input-text="store?.data?.inputText || ''"
-      :selected-format="store?.data?.selectedFormat || 'text'"
+    <InputField 
+      :value="inputText"
+      :max-length="maxLength"
+      :is-over-limit="isOverLimit"
+      @input="handleInput"
     />
   `
 };
@@ -312,38 +301,47 @@ const ResultDisplayWrapper = {
 ### Code Organization
 ```javascript
 // === Global Store ===
-// /public/js/store.js - Vue reactive global state
+// /public/js/store.js - Vue reactive global state with ES6 export
 
-// === Vue Components ===
-// /public/js/components/left-component.js - Input panel
-// /public/js/components/result-config-bar.js - Format selection
+// === Container/Presentational Architecture ===
+// /public/js/components/left-input/
+//   ├── container.js - Business logic + store integration
+//   ├── input-field.js - Pure textarea presentation
+//   └── input-toolbar.js - Toolbar buttons presentation
+//
 // /public/js/components/result-display/
-//   ├── component.js - Pure prop-based component
-//   └── wrapper.js - Store-to-props bridge
-// /public/js/components/global-config.js - Global settings
+//   ├── container.js - Text processing + store integration  
+//   └── component.js - Pure display presentation
+//
+// /public/js/components/result-config-bar.js - Format selection
+// /public/js/components/global-config.js - Global settings modal
 
-// === Component Structure ===
-const Component = {
-  props: {
-    // Typed props with validation
-  },
+// === Container Component Pattern ===
+import { AppStore } from '../../store.js';
+import { PresentationalComponent } from './component.js';
+
+const ContainerComponent = {
   computed: {
-    // Reactive calculations
+    // Store integration
+    store() { return AppStore; },
+    // Business logic
+    processedData() { /* processing logic */ }
   },
   methods: {
-    // Component-specific logic
+    // Event handlers and store updates
   },
-  template: `<!-- Component HTML -->`
+  components: { PresentationalComponent },
+  template: `<PresentationalComponent :data="processedData" />`
 };
 
-// === Initialization ===
-document.addEventListener('DOMContentLoaded', () => {
-  // Mount Vue components
-  mountLeftComponent();
-  mountResultConfigBar();
-  mountResultDisplayComponent(); // Mounts wrapper
-  mountGlobalConfig();
-});
+// === Presentational Component Pattern ===
+export const PresentationalComponent = {
+  props: {
+    data: { type: Object, required: true }
+  },
+  emits: ['action'],
+  template: `<!-- Pure UI rendering -->`
+};
 ```
 
 ---

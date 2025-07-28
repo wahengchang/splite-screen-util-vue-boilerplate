@@ -2,14 +2,15 @@
 
 ## Design System Overview
 
-This specification defines the user interface and user experience standards for Vue Component-Store-Observer architecture with prop-based components and reactive state management.
+This specification defines the user interface and user experience standards for Container/Presentational component architecture with ES6 modules and Vue reactive state management.
 
 ### Implementation Goals
-- **Vue Component Architecture**: Props-based components with clean separation
-- **Rapid Development**: Reusable Vue component patterns with store integration
+- **Container/Presentational Pattern**: Clean separation of business logic and UI
+- **ES6 Module Architecture**: Modern import/export with browser native modules
+- **Rapid Development**: Reusable presentational components with container logic
 - **Consistency Guarantee**: Unified visual patterns across all components
 - **Technical Constraint Adaptation**: Vue 3 CDN + Tailwind CSS + static serving
-- **Reactive Architecture**: Vue reactive store with computed properties
+- **Reactive Architecture**: Vue reactive store with ES6 imports
 
 ## Technical Implementation Foundation
 
@@ -119,15 +120,14 @@ Every tool should use this Vue-enabled structure:
     </footer>
   </div>
   
-  <!-- Vue Component-Store-Observer Architecture -->
-  <script src="js/store.js"></script>
+  <!-- Vue Container/Presentational Architecture with ES6 Modules -->
+  <script type="module" src="js/store.js"></script>
   <script src="js/theme-handler.js"></script>
   <script src="js/panel-resize-handler.js"></script>
-  <script src="js/components/left-component.js"></script>
-  <script src="js/components/result-config-bar.js"></script>
-  <script src="js/components/result-display/component.js"></script>
-  <script src="js/components/result-display/wrapper.js"></script>
-  <script src="js/components/global-config.js"></script>
+  <script type="module" src="js/components/left-input/container.js"></script>
+  <script type="module" src="js/components/result-config-bar.js"></script>
+  <script type="module" src="js/components/result-display/container.js"></script>
+  <script type="module" src="js/components/global-config.js"></script>
 </body>
 </html>
 ```
@@ -499,23 +499,14 @@ function initPanelResize() {
 }
 ```
 
-### Vue Component State Management Pattern
+### Container/Presentational Component Pattern
 ```javascript
-// Global Vue Reactive Store
+// === Global Store with ES6 Export ===
 window.AppStore = (function() {
   const reactiveData = Vue.reactive({
     inputText: '',
     selectedFormat: 'text',
-    currentTheme: localStorage.getItem('app-theme') || 'dark',
-    panelRatio: parseInt(localStorage.getItem('panel-ratio')) || 50,
-    leftPanelState: {
-      isExpanded: true,
-      activeTab: 'input'
-    },
-    rightPanelState: {
-      isExpanded: true,
-      activeTab: 'result'
-    }
+    currentTheme: localStorage.getItem('app-theme') || 'dark'
   });
 
   return {
@@ -523,51 +514,67 @@ window.AppStore = (function() {
     updateInputText(text) {
       reactiveData.inputText = text;
       this.saveToLocalStorage('inputText', text);
-    },
-    updateFormat(format) {
-      reactiveData.selectedFormat = format;
-      this.saveToLocalStorage('selectedFormat', format);
-    },
-    updateTheme(theme) {
-      reactiveData.currentTheme = theme;
-      this.saveToLocalStorage('app-theme', theme);
-      document.documentElement.setAttribute('data-theme', theme);
     }
   };
 })();
 
-// Pure Props-Based Vue Component
-const ResultDisplayComponent = {
+export const AppStore = window.AppStore;
+
+// === Presentational Component (Pure UI) ===
+export const InputToolbarComponent = {
   props: {
-    inputText: { type: String, default: '' },
-    selectedFormat: { type: String, default: 'text' }
+    characterCount: { type: Number, default: 0 },
+    hasText: { type: Boolean, default: false }
+  },
+  emits: ['clear', 'paste'],
+  
+  template: `
+    <div class="toolbar flex items-center justify-between">
+      <div class="flex space-x-2">
+        <button @click="$emit('clear')" :disabled="!hasText">Clear</button>
+        <button @click="$emit('paste')">Paste</button>
+      </div>
+      <span>{{ characterCount }} characters</span>
+    </div>
+  `
+};
+
+// === Container Component (Business Logic) ===
+import { AppStore } from '../../store.js';
+import { InputToolbarComponent } from './input-toolbar.js';
+
+const LeftInputContainer = {
+  data() {
+    return { inputText: '' };
   },
   
   computed: {
-    processedResult() {
-      // Component handles its own processing
-      return this.analyzeText(this.inputText);
-    }
+    store() { return AppStore; },
+    characterCount() { return this.inputText.length; },
+    hasText() { return this.inputText.trim().length > 0; }
   },
   
   methods: {
-    analyzeText(text) {
-      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-      return `Word Count: ${words.length}\nCharacter Count: ${text.length}`;
+    handleClear() {
+      this.inputText = '';
+      this.store.updateInputText('');
+    },
+    
+    async handlePaste() {
+      const text = await navigator.clipboard.readText();
+      this.inputText += text;
+      this.store.updateInputText(this.inputText);
     }
-  }
-};
-
-// Store-to-Props Bridge
-const ResultDisplayWrapper = {
-  computed: {
-    store() { return window.AppStore; }
   },
   
+  components: { InputToolbar: InputToolbarComponent },
+  
   template: `
-    <ResultDisplay 
-      :input-text="store?.data?.inputText || ''"
-      :selected-format="store?.data?.selectedFormat || 'text'"
+    <InputToolbar 
+      :character-count="characterCount"
+      :has-text="hasText"
+      @clear="handleClear"
+      @paste="handlePaste"
     />
   `
 };
@@ -623,36 +630,73 @@ function createVirtualScroll(container, items, renderItem) {
 ## Development Workflow
 
 ### Quick Start New Tool
-1. Copy Vue-enabled HTML template with component mount points
-2. Modify page title and initialize global store
-3. Create Vue components with props-based architecture
-4. Implement component processing logic (analyzeText, formatJSON, etc.)
-5. Set up store-to-props bridges for reactive updates
-6. Test component reactivity and theme switching
+1. Copy Vue-enabled HTML template with ES6 module scripts
+2. Modify page title and initialize global store with ES6 export
+3. Create presentational components with props and emits
+4. Create container components with business logic and store integration
+5. Import dependencies using ES6 import statements
+6. Test component reactivity and module loading
 
-### Component Reuse Pattern
+### Component Architecture Pattern
 ```javascript
-// Reusable UI component creation functions
-function createButton(text, className, onClick) {
-  const button = document.createElement('button');
-  button.textContent = text;
-  button.className = className;
-  button.addEventListener('click', onClick);
-  return button;
-}
+// === Reusable Presentational Components ===
+export const ButtonComponent = {
+  props: {
+    text: { type: String, required: true },
+    variant: { type: String, default: 'primary' },
+    disabled: { type: Boolean, default: false }
+  },
+  emits: ['click'],
+  
+  template: `
+    <button 
+      :class="buttonClasses"
+      :disabled="disabled"
+      @click="$emit('click')"
+    >
+      {{ text }}
+    </button>
+  `
+};
 
-function createPanel(title, content) {
-  return `
+export const PanelComponent = {
+  props: {
+    title: { type: String, required: true }
+  },
+  
+  template: `
     <div class="panel">
       <div class="panel-header">
-        <h3 class="panel-title">${title}</h3>
+        <h3 class="panel-title">{{ title }}</h3>
       </div>
       <div class="panel-content">
-        ${content}
+        <slot></slot>
       </div>
     </div>
-  `;
-}
+  `
+};
+
+// === Container Usage Pattern ===
+import { ButtonComponent, PanelComponent } from './ui-components.js';
+
+const MyContainer = {
+  components: { Button: ButtonComponent, Panel: PanelComponent },
+  
+  methods: {
+    handleAction() {
+      // Business logic here
+    }
+  },
+  
+  template: `
+    <Panel title="My Feature">
+      <Button 
+        text="Action" 
+        @click="handleAction"
+      />
+    </Panel>
+  `
+};
 ```
 
 ### Debug and Testing
