@@ -4,6 +4,8 @@
  * @component SettingsModalComponent
  */
 
+import { AppStore } from '../store.js';
+
 const SettingsModalComponent = {
   data() {
     return {
@@ -133,7 +135,7 @@ const SettingsModalComponent = {
     
     // === Store Integration Methods ===
     getStore() {
-      return window.AppStore;
+      return AppStore;
     },
 
     updateStore(method, data) {
@@ -354,3 +356,5 @@ function mountSettingsModalComponent() {
 }
 
 document.addEventListener('DOMContentLoaded', mountSettingsModalComponent);
+
+export { SettingsModalComponent };

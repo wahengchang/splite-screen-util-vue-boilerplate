@@ -4,6 +4,8 @@
  * @component FormatSelectionComponent
  */
 
+import { AppStore } from '../store.js';
+
 const FormatSelectionComponent = {
   data() {
     return {
@@ -29,7 +31,7 @@ const FormatSelectionComponent = {
 
     // === Store Integration Methods ===
     getStore() {
-      return window.AppStore;
+      return AppStore;
     },
 
     updateStore(method, data) {
@@ -94,3 +96,5 @@ function mountFormatSelectionComponent() {
 }
 
 document.addEventListener('DOMContentLoaded', mountFormatSelectionComponent);
+
+export { FormatSelectionComponent };

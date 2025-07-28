@@ -4,76 +4,34 @@
  * @component ResultDisplayComponent
  */
 
-const ResultDisplayComponent = {
+export const ResultDisplayComponent = {
   props: {
-    inputText: {
+    processedResult: {
       type: String,
       default: ''
     },
-    selectedFormat: {
-      type: String,
-      default: 'text',
-      validator: (value) => ['text', 'json', 'html'].includes(value)
+    resultStats: {
+      type: Object,
+      default: () => null
     },
     currentTheme: {
       type: String,
       default: 'dark',
       validator: (value) => ['light', 'dark'].includes(value)
+    },
+    isErrorResult: {
+      type: Boolean,
+      default: false
     }
   },
   
   computed: {
-    processedResult() {
-      if (!this.inputText.trim()) return '';
-      
-      const input = this.inputText;
-      const format = this.selectedFormat;
-      
-      try {
-        switch (format) {
-          case 'json':
-            try {
-              const parsed = JSON.parse(input);
-              return JSON.stringify(parsed, null, 2);
-            } catch (e) {
-              // If JSON parsing fails, fallback to text analysis
-              return this.analyzeText(input);
-            }
-            
-          case 'html':
-            return this.formatHTML(input);
-            
-          case 'text':
-          default:
-            return this.analyzeText(input);
-        }
-      } catch (error) {
-        return `Processing Error: ${error.message}`;
-      }
-    },
-    
-    resultStats() {
-      if (!this.processedResult) return null;
-      
-      return {
-        wordCount: this.calculateWordCount(this.processedResult),
-        charCount: this.processedResult.length,
-        lineCount: this.calculateLineCount(this.processedResult),
-        processedAt: new Date().toISOString()
-      };
-    },
-    
     lastProcessed() {
       return this.resultStats?.processedAt || null;
     },
     
     resultPlaceholder() {
       return 'Results will appear here after processing input text';
-    },
-    
-    isErrorResult() {
-      return this.processedResult.includes('Error:') || 
-             this.processedResult.includes('error:');
     },
     
     themeClasses() {
@@ -101,45 +59,6 @@ const ResultDisplayComponent = {
       if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
       
       return date.toLocaleDateString();
-    },
-    
-    analyzeText(text) {
-      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-      const lines = text.split('\n');
-      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-      
-      const analysis = {
-        'Word Count': words.length,
-        'Character Count': text.length,
-        'Character Count (no spaces)': text.replace(/\s/g, '').length,
-        'Line Count': lines.length,
-        'Sentence Count': sentences.length,
-        'Average Words per Sentence': sentences.length > 0 ? (words.length / sentences.length).toFixed(1) : 0,
-        'Reading Time (min)': Math.ceil(words.length / 200) // ~200 WPM average
-      };
-      
-      return Object.entries(analysis)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
-    },
-
-    formatHTML(html) {
-      try {
-        return html
-          .replace(/>\s+</g, '><')
-          .replace(/\s+/g, ' ')
-          .trim();
-      } catch (e) {
-        return `HTML Format Error: ${e.message}`;
-      }
-    },
-
-    calculateWordCount(text) {
-      return text.trim().split(/\s+/).filter(word => word.length > 0).length;
-    },
-
-    calculateLineCount(text) {
-      return text.split('\n').length;
     }
   },
   
@@ -166,7 +85,7 @@ const ResultDisplayComponent = {
       <div class="flex-1 relative">
         <textarea
           ref="resultDisplay"
-          v-model="processedResult"
+          :value="processedResult"
           readonly
           :placeholder="resultPlaceholder"
           class="w-full h-full resize-none p-3 border rounded font-mono text-sm leading-relaxed"
