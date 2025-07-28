@@ -24,6 +24,7 @@ build/
 # dotenv environment variables
 .env
 .env.*
+env.sh
 
 # Mac system files
 .DS_Store
