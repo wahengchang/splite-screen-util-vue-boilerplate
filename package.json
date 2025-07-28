@@ -6,9 +6,14 @@
     "kill:port5050": "lsof -ti:5050 | xargs kill -9 2>/dev/null || true",
     "dev": "npm run kill:port5050; npx serve --no-clipboard -l 5050 ./public",
     "start": "npm run kill:port5050; npx serve --no-clipboard -l 5050 ./public",
-    "test": "echo 'Frontend testing to be configured'"
+    "test": "npx playwright test",
+    "test:e2e": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.1",
+    "playwright": "^1.54.1",
     "serve": "^14.2.4"
   },
   "keywords": [
