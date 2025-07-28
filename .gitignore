@@ -35,5 +35,27 @@ build/
 # Coverage directory
 coverage/
 
-# Misc
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated
+Thumbs.db
+*~
+
+# Archive files
 *.tgz
+*.tar.gz
+*.zip
+
+# Git
+.git/
+*.orig
+
+# Claude Code
+.claude/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
